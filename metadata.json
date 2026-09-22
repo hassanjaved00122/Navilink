@@ -1,0 +1,12 @@
+{
+  "name": "NaviLink - Real-Time Location & Navigation",
+  "description": "Connect, Track, and Navigate in Real-Time with high-end live 3D mapping and encrypted proximity sharing.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
+

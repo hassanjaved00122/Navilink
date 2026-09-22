@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="50%" stop-color="#090d16"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="neonSky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="accentGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Outer subtle tech border -->
+  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="#38bdf8" stroke-width="4" stroke-opacity="0.4"/>
+
+  <!-- Radar concentric circles -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.2" stroke-dasharray="6,6"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="60" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Crosshair axes -->
+  <line x1="256" y1="56" x2="256" y2="456" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.25"/>
+  <line x1="56" y1="256" x2="456" y2="256" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Central Navigation Pin Marker -->
+  <g filter="url(#glow)">
+    <!-- Radar ping pulse wave -->
+    <circle cx="256" cy="220" r="75" fill="none" stroke="#38bdf8" stroke-width="4" stroke-opacity="0.6"/>
+    
+    <!-- Main Geo Pin -->
+    <path d="M256 120 C195.25 120 146 169.25 146 230 C146 302 240 388 256 400 C272 388 366 302 366 230 C366 169.25 316.75 120 256 120 Z" 
+          fill="url(#neonSky)" />
+    
+    <!-- Pin Inner Core -->
+    <circle cx="256" cy="226" r="42" fill="#020617"/>
+    <circle cx="256" cy="226" r="26" fill="#38bdf8"/>
+    <circle cx="256" cy="226" r="10" fill="#ffffff"/>
+  </g>
+
+  <!-- Live Pulse Beacon Dots -->
+  <circle cx="360" cy="180" r="8" fill="#38bdf8" filter="url(#glow)"/>
+  <circle cx="160" cy="330" r="6" fill="#38bdf8" opacity="0.8"/>
+  <circle cx="340" cy="340" r="7" fill="#38bdf8" opacity="0.9"/>
+</svg>
