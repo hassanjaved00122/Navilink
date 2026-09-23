@@ -3,25 +3,12 @@ import { UserProfile } from '../../types';
 import { NaviLinkLogo } from '../Common/NaviLinkLogo';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import {
-  Users,
-  Ghost,
-  MapPinOff,
-  RefreshCw,
-  Terminal,
-  Play,
-  Pause,
   Shield,
-  ShieldAlert,
+  Ghost,
   Lock,
   Compass,
-  CheckCircle2,
   Footprints,
   Car,
-  BatteryCharging,
-  Battery,
-  Radio,
-  Sliders,
-  UserPlus,
   Crosshair,
   AlertCircle,
   Trash2,
@@ -30,22 +17,26 @@ import {
   Download,
   Smartphone,
   Check,
+  EyeOff,
+  BatteryCharging,
+  Sliders,
+  Radio,
 } from 'lucide-react';
 
 interface ControlCenterTabProps {
   currentUser: UserProfile;
-  users: UserProfile[];
-  onSwitchUser: (userId: string) => void;
-  isSimulating: boolean;
-  onToggleSimulate: () => void;
+  users?: UserProfile[];
+  onSwitchUser?: (userId: string) => void;
+  isSimulating?: boolean;
+  onToggleSimulate?: () => void;
   isE2EEEnabled: boolean;
   onToggleE2EE: () => void;
   onToggleMasterLocation: () => void;
   onToggleGhostMode: () => void;
-  onResetDemo: () => void;
-  onOpenSocketLogs: () => void;
-  socketLogsCount: number;
-  onOpenTestGuide: () => void;
+  onResetDemo?: () => void;
+  onOpenSocketLogs?: () => void;
+  socketLogsCount?: number;
+  onOpenTestGuide?: () => void;
   onOpenAR?: () => void;
   onOpenAddModal?: () => void;
   onOpenEditProfile?: () => void;
@@ -60,20 +51,11 @@ interface ControlCenterTabProps {
 
 export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
   currentUser,
-  users,
-  onSwitchUser,
-  isSimulating,
-  onToggleSimulate,
   isE2EEEnabled,
   onToggleE2EE,
   onToggleMasterLocation,
   onToggleGhostMode,
-  onResetDemo,
-  onOpenSocketLogs,
-  socketLogsCount,
-  onOpenTestGuide,
   onOpenAR,
-  onOpenAddModal,
   onOpenEditProfile,
   onDeleteProfile,
   onSignOut,
@@ -84,7 +66,10 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
   gpsError,
 }) => {
   const [isDeletingProfile, setIsDeletingProfile] = useState<boolean>(false);
+  const [precisionMode, setPrecisionMode] = useState<'exact' | 'approximate' | 'invisible'>('exact');
+  const [autoPauseInactive, setAutoPauseInactive] = useState<boolean>(true);
   const pwa = usePWAInstall();
+
   return (
     <div className="flex flex-col h-full overflow-y-auto p-4 space-y-4 text-zinc-100 bg-black custom-scrollbar">
       {/* Tab Header */}
@@ -93,37 +78,36 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
           <NaviLinkLogo size="xs" showText={true} showTagline={false} />
           <div className="h-4 w-[1px] bg-zinc-800" />
           <div>
-            <h2 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Control Center</h2>
-            <p className="text-[10px] text-zinc-400">Settings & Mesh Options</p>
+            <h2 className="text-xs font-bold text-zinc-100 uppercase tracking-wider">Settings & Privacy</h2>
+            <p className="text-[10px] text-zinc-400">Security, Navigation & Preferences</p>
           </div>
         </div>
-        <button
-          onClick={onResetDemo}
-          title="Reset sample data to original state"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reset</span>
-        </button>
       </div>
 
-      {/* 1. Persona Switcher Section */}
+      {/* 1. Current User Profile Card */}
       <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-cyan-400" />
-            Switch Active Persona (Profile)
+            <Sliders className="w-4 h-4 text-sky-400" />
+            My Active Account
           </span>
-          <span className="text-[10px] font-mono text-zinc-400">5 Profiles Available</span>
+          <span
+            className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
+              currentUser.appLocationStatus
+                ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/60'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-700'
+            }`}
+          >
+            {currentUser.appLocationStatus ? 'ONLINE' : 'OFFLINE'}
+          </span>
         </div>
 
-        {/* Current User Pill Card */}
-        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black border border-zinc-900">
+        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black border border-zinc-800">
           <div className="relative">
             <img
               src={currentUser.avatarUrl}
               alt={currentUser.name}
-              className="w-10 h-10 rounded-full object-cover border-2 border-cyan-400"
+              className="w-11 h-11 rounded-full object-cover border-2 border-sky-400"
             />
             {currentUser.ghostMode ? (
               <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-purple-600 flex items-center justify-center text-[9px]">
@@ -134,21 +118,15 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
                 ✕
               </span>
             ) : (
-              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-black"></span>
+              <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-black" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${
-                currentUser.appLocationStatus
-                  ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/60'
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-700'
-              }`}>
-                {currentUser.appLocationStatus ? 'ONLINE' : 'OFFLINE'}
-              </span>
             </div>
-            <p className="text-[11px] text-zinc-400 font-mono">{currentUser.uniqueAppId}</p>
+            <p className="text-[11px] text-sky-300 font-mono mt-0.5">{currentUser.uniqueAppId}</p>
+            <p className="text-[10px] text-zinc-500 font-mono">{currentUser.phoneNumber}</p>
           </div>
         </div>
 
@@ -156,129 +134,210 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
           <button
             type="button"
             onClick={onOpenEditProfile}
-            className="w-full py-2 rounded-xl bg-black hover:bg-zinc-900 border border-sky-400 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-xl bg-black hover:bg-white text-white hover:text-black border border-sky-400 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
           >
-            <span>✏️ Edit My Profile & Radar ID</span>
-          </button>
-        )}
-
-        {/* Persona Buttons */}
-        <div className="grid grid-cols-2 gap-2">
-          {Array.from(new Map(users.map((u) => [u.userId, u])).values()).map((user, idx) => {
-            const isSelected = user.userId === currentUser.userId;
-            return (
-              <button
-                key={`user-persona-${user.userId}-${idx}`}
-                onClick={() => onSwitchUser(user.userId)}
-                className={`flex items-center gap-2 p-2 rounded-xl text-xs transition-all border text-left cursor-pointer ${
-                  isSelected
-                    ? 'bg-white text-black border-white font-bold shadow-md'
-                    : 'bg-black text-white border-sky-400/60 hover:bg-zinc-900'
-                }`}
-              >
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="w-6 h-6 rounded-full object-cover shrink-0 border border-sky-400"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-semibold">{user.name.split(' ')[0]}</p>
-                  <p className={`text-[9px] truncate font-mono ${isSelected ? 'text-zinc-600' : 'text-zinc-400'}`}>
-                    {user.appLocationStatus ? 'Online' : 'Offline'}
-                  </p>
-                </div>
-                {user.ghostMode && <Ghost className="w-3 h-3 text-purple-400 shrink-0" />}
-                {!user.appLocationStatus && <MapPinOff className="w-3 h-3 text-amber-400 shrink-0" />}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Add New Contact / Number Button */}
-        {onOpenAddModal && (
-          <button
-            onClick={onOpenAddModal}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-black hover:bg-zinc-900 border border-sky-400 text-white text-xs font-semibold transition-all cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4 text-sky-400" />
-            <span>+ Add New Friend / Registered Contact</span>
+            <span>✏️ Edit Profile & Display Name</span>
           </button>
         )}
       </div>
 
-      {/* 2. Live GPS & Routing */}
+      {/* 2. Privacy & Security Center (Major Feature) */}
       <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-white flex items-center gap-1.5">
-            <Radio className="w-4 h-4 text-sky-400" />
-            Live Movement & Route
+            <Shield className="w-4 h-4 text-sky-400" />
+            <span>Privacy & Location Controls</span>
           </span>
-          <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-              isSimulating ? 'bg-white text-black border-white' : 'bg-black text-zinc-400 border-zinc-700'
-            }`}
-          >
-            {isSimulating ? 'SIMULATING' : 'PAUSED'}
-          </span>
+          <span className="text-[10px] font-mono text-zinc-400">ENCRYPTED</span>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {/* Real Device Location Toggle */}
-          {onToggleLiveGPS && (
+        {/* Master In-App Tracking Switch */}
+        <div className="p-3 rounded-xl bg-black border border-sky-400/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>Location Sharing</span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    currentUser.appLocationStatus ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'
+                  }`}
+                />
+              </p>
+              <p className="text-[10px] text-zinc-400 mt-0.5">
+                {currentUser.appLocationStatus
+                  ? 'Active: Saved contacts see you as ONLINE with live location.'
+                  : 'Disabled: Contacts see you as OFFLINE. No location is transmitted.'}
+              </p>
+            </div>
             <button
-              onClick={onToggleLiveGPS}
-              className={`w-full flex items-center justify-between py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                isLiveGPSActive
-                  ? 'bg-white text-black border-white shadow-md'
-                  : 'bg-black text-white border-sky-400 hover:bg-zinc-900'
+              id="btn-toggle-location-sharing"
+              onClick={onToggleMasterLocation}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                currentUser.appLocationStatus
+                  ? 'bg-white text-black border border-white shadow-md'
+                  : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
               }`}
             >
-              <span className="flex items-center gap-2">
-                <Crosshair className={`w-4 h-4 ${isLiveGPSActive ? 'text-black animate-pulse' : 'text-sky-400'}`} />
-                <span>Use My Real Device GPS</span>
-              </span>
-              <span
-                className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
-                  isLiveGPSActive ? 'bg-black text-white border-black font-bold' : 'bg-black border-sky-400 text-sky-300'
-                }`}
-              >
-                {isLiveGPSActive ? 'LIVE ACTIVE' : 'ENABLE'}
-              </span>
+              {currentUser.appLocationStatus ? 'ON' : 'OFF'}
             </button>
-          )}
+          </div>
+        </div>
 
-          {gpsError && (
-            <div className="flex items-center gap-1.5 p-2 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px]">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>{gpsError}</span>
-            </div>
-          )}
-
+        {/* Ghost Mode Toggle */}
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-zinc-800">
+          <div>
+            <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+              <span>Ghost Mode (Freeze Location)</span>
+              <span className="text-[10px] text-purple-400">👻</span>
+            </p>
+            <p className="text-[10px] text-zinc-400">
+              {currentUser.ghostMode
+                ? 'Ghost active: Freezes your coordinates at current spot.'
+                : 'Broadcasts real moving coordinates.'}
+            </p>
+          </div>
           <button
-            onClick={onToggleSimulate}
-            className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-              isSimulating
+            onClick={onToggleGhostMode}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              currentUser.ghostMode
+                ? 'bg-white text-black border border-white shadow-md font-bold'
+                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
+            }`}
+          >
+            {currentUser.ghostMode ? 'GHOST: ON' : 'GHOST: OFF'}
+          </button>
+        </div>
+
+        {/* E2EE Military-Grade Encryption Toggle */}
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-zinc-800">
+          <div>
+            <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-sky-400" />
+              <span>AES-256 E2EE End-to-End Encryption</span>
+            </p>
+            <p className="text-[10px] text-zinc-400">
+              Encrypts GPS telemetry before broadcasting to mesh network.
+            </p>
+          </div>
+          <button
+            onClick={onToggleE2EE}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              isE2EEEnabled
+                ? 'bg-white text-black border border-white shadow-md font-bold'
+                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
+            }`}
+          >
+            {isE2EEEnabled ? 'E2EE: ON' : 'E2EE: OFF'}
+          </button>
+        </div>
+
+        {/* Precision Shield Selector */}
+        <div className="p-2.5 rounded-xl bg-black border border-zinc-800 space-y-2">
+          <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+            <EyeOff className="w-3.5 h-3.5 text-sky-400" />
+            <span>Proximity Shield Precision</span>
+          </p>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPrecisionMode('exact')}
+              className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold text-center transition-all border cursor-pointer ${
+                precisionMode === 'exact'
+                  ? 'bg-white text-black border-white font-bold shadow'
+                  : 'bg-black text-white border-zinc-800 hover:border-zinc-700'
+              }`}
+            >
+              Exact GPS
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrecisionMode('approximate')}
+              className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold text-center transition-all border cursor-pointer ${
+                precisionMode === 'approximate'
+                  ? 'bg-white text-black border-white font-bold shadow'
+                  : 'bg-black text-white border-zinc-800 hover:border-zinc-700'
+              }`}
+            >
+              500m Area
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrecisionMode('invisible')}
+              className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold text-center transition-all border cursor-pointer ${
+                precisionMode === 'invisible'
+                  ? 'bg-white text-black border-white font-bold shadow'
+                  : 'bg-black text-white border-zinc-800 hover:border-zinc-700'
+              }`}
+            >
+              Stealth
+            </button>
+          </div>
+        </div>
+
+        {/* Battery & Auto-Pause Privacy Feature */}
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-zinc-800">
+          <div>
+            <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+              <BatteryCharging className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Auto-Pause When Inactive</span>
+            </p>
+            <p className="text-[10px] text-zinc-400">Halt background GPS when idle to save battery & data.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAutoPauseInactive(!autoPauseInactive)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              autoPauseInactive
+                ? 'bg-white text-black border border-white shadow-md font-bold'
+                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
+            }`}
+          >
+            {autoPauseInactive ? 'ON' : 'OFF'}
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Navigation & Device Hardware Preferences */}
+      <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-3">
+        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+          <Radio className="w-4 h-4 text-sky-400" />
+          Hardware GPS & Route Mode
+        </span>
+
+        {/* Real Device Location Toggle */}
+        {onToggleLiveGPS && (
+          <button
+            onClick={onToggleLiveGPS}
+            className={`w-full flex items-center justify-between py-2 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+              isLiveGPSActive
                 ? 'bg-white text-black border-white shadow-md'
                 : 'bg-black text-white border-sky-400 hover:bg-zinc-900'
             }`}
           >
-            {isSimulating ? (
-              <>
-                <Pause className="w-4 h-4" />
-                <span>Pause Background Wander</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-current text-sky-400" />
-                <span>Start Live GPS Wander</span>
-              </>
-            )}
+            <span className="flex items-center gap-2">
+              <Crosshair className={`w-4 h-4 ${isLiveGPSActive ? 'text-black animate-pulse' : 'text-sky-400'}`} />
+              <span>Use Real Device GPS Hardware</span>
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                isLiveGPSActive ? 'bg-black text-white border-black font-bold' : 'bg-black border-sky-400 text-sky-300'
+              }`}
+            >
+              {isLiveGPSActive ? 'LIVE ACTIVE' : 'ENABLE'}
+            </span>
           </button>
-        </div>
+        )}
+
+        {gpsError && (
+          <div className="flex items-center gap-1.5 p-2 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[11px]">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>{gpsError}</span>
+          </div>
+        )}
 
         {/* Travel Mode: Walk vs Drive */}
         <div className="pt-2 border-t border-zinc-900">
-          <span className="text-[11px] text-zinc-400 block mb-1.5">Route Navigation Mode:</span>
+          <span className="text-[11px] text-zinc-400 block mb-1.5">Preferred Route Mode:</span>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onChangeRouteMode('walking')}
@@ -289,7 +348,7 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
               }`}
             >
               <Footprints className="w-3.5 h-3.5" />
-              <span>Walk (Streets)</span>
+              <span>Walk (Pedestrian)</span>
             </button>
             <button
               onClick={() => onChangeRouteMode('driving')}
@@ -304,110 +363,6 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* 3. Privacy & Location Controls (Default ON, with Off Option) */}
-      <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-3">
-        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-          <Shield className="w-4 h-4 text-sky-400" />
-          Privacy & Location Sharing
-        </span>
-
-        {/* Master In-App Tracking Switch */}
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-sky-400/50">
-          <div>
-            <p className="text-xs font-semibold text-white">Live Location Sharing</p>
-            <p className="text-[10px] text-zinc-400">
-              {currentUser.appLocationStatus
-                ? 'Status: Online (Friends see your live pin on map)'
-                : 'Status: Offline (Your location is completely private)'}
-            </p>
-          </div>
-          <button
-            onClick={onToggleMasterLocation}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              currentUser.appLocationStatus
-                ? 'bg-white text-black border border-white shadow-md'
-                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
-            }`}
-          >
-            {currentUser.appLocationStatus ? 'LOCATION: ON' : 'LOCATION: OFF'}
-          </button>
-        </div>
-
-        {/* Ghost Mode Toggle */}
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-zinc-800">
-          <div>
-            <p className="text-xs font-semibold text-white flex items-center gap-1">
-              <span>Ghost Mode</span>
-              <span className="text-[10px] text-purple-400">👻</span>
-            </p>
-            <p className="text-[10px] text-zinc-400">Freeze coordinates at current spot</p>
-          </div>
-          <button
-            onClick={onToggleGhostMode}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              currentUser.ghostMode
-                ? 'bg-white text-black border border-white font-bold'
-                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
-            }`}
-          >
-            {currentUser.ghostMode ? 'GHOST: ON' : 'GHOST: OFF'}
-          </button>
-        </div>
-
-        {/* E2EE Encryption Toggle */}
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-black border border-zinc-800">
-          <div>
-            <p className="text-xs font-semibold text-white flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-sky-400" />
-              <span>AES-256 E2EE</span>
-            </p>
-            <p className="text-[10px] text-zinc-400">End-to-end encrypted payloads</p>
-          </div>
-          <button
-            onClick={onToggleE2EE}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              isE2EEEnabled
-                ? 'bg-white text-black border border-white font-bold'
-                : 'bg-black text-white border border-sky-400 hover:bg-zinc-900'
-            }`}
-          >
-            {isE2EEEnabled ? 'E2EE: ON' : 'E2EE: OFF'}
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Diagnostics & Quick Tools */}
-      <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-2.5">
-        <span className="text-xs font-bold text-white flex items-center gap-1.5">
-          <Terminal className="w-4 h-4 text-sky-400" />
-          Diagnostics & Tools
-        </span>
-
-        <button
-          onClick={onOpenSocketLogs}
-          className="w-full flex items-center justify-between p-2.5 rounded-xl bg-black hover:bg-zinc-900 border border-sky-400 text-xs text-white transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-sky-400" />
-            <span>WebSocket Live Stream</span>
-          </div>
-          <span className="px-2 py-0.5 rounded-full bg-white text-black font-mono text-[10px] font-bold">
-            {socketLogsCount} events
-          </span>
-        </button>
-
-        <button
-          onClick={onOpenTestGuide}
-          className="w-full flex items-center justify-between p-2.5 rounded-xl bg-black hover:bg-zinc-900 border border-sky-400 text-xs text-white transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-sky-400" />
-            <span>Run Test & Verify Suite</span>
-          </div>
-          <span className="text-[10px] text-sky-300 font-mono">10 Tests</span>
-        </button>
 
         {onOpenAR && (
           <button
@@ -416,14 +371,14 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
           >
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4 text-sky-400" />
-              <span>Launch Indoor AR Radar</span>
+              <span>Launch 3D AR Compass Radar</span>
             </div>
             <span className="text-[10px] text-sky-300 font-mono">Compass 3D</span>
           </button>
         )}
       </div>
 
-      {/* 5. Progressive Web App (PWA) Mobile Installation */}
+      {/* 4. Progressive Web App (PWA) Mobile Installation */}
       <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -436,7 +391,7 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
         </div>
 
         <p className="text-[11px] text-zinc-400">
-          Install NaviLink directly to your mobile home screen. Includes background live GPS tracking, instant offline cache, and seamless automatic updates when code is pushed to GitHub.
+          Install NaviLink to your home screen for full background GPS tracking, offline cache, and automatic instant updates when pushed to GitHub.
         </p>
 
         {pwa.isInstalled ? (
@@ -463,7 +418,7 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
         )}
       </div>
 
-      {/* 6. Account & Profile Management */}
+      {/* 5. Account & Profile Management */}
       <div className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-900 space-y-3">
         <span className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
           <Trash2 className="w-4 h-4 text-rose-500" />
@@ -531,3 +486,4 @@ export const ControlCenterTab: React.FC<ControlCenterTabProps> = ({
     </div>
   );
 };
+

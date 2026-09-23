@@ -1423,6 +1423,7 @@ export default function App() {
           onChangeRouteMode={setRouteMode}
           isLiveGPSActive={isLiveGPSActive}
           onToggleLiveGPS={handleToggleLiveGPS}
+          onToggleMasterLocation={handleToggleMasterLocation}
           gpsError={gpsError}
           isRealGpsFixed={hasRealGpsFix}
         />

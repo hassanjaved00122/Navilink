@@ -56,6 +56,7 @@ interface LiveMapViewProps {
   }) => void;
   isLiveGPSActive?: boolean;
   onToggleLiveGPS?: () => void;
+  onToggleMasterLocation?: () => void;
   gpsError?: string | null;
   isRealGpsFixed?: boolean;
 }
@@ -74,6 +75,7 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
   onDirectionsUpdated,
   isLiveGPSActive = false,
   onToggleLiveGPS,
+  onToggleMasterLocation,
   gpsError,
   isRealGpsFixed = false,
 }) => {
@@ -81,6 +83,7 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
   const [mapReady, setMapReady] = useState<boolean>(false);
   const [currentZoom, setCurrentZoom] = useState<number>(16);
   const [mapRotation, setMapRotation] = useState<number>(0);
+  const [isRotatingWithFinger, setIsRotatingWithFinger] = useState<boolean>(false);
   const [selectedPoi, setSelectedPoi] = useState<GoogleMapPOI | null>(null);
   const [internalRouteMode, setInternalRouteMode] = useState<'walking' | 'driving'>('walking');
   const routeMode = propRouteMode ?? internalRouteMode;
@@ -98,12 +101,36 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
   const [isMovedAway, setIsMovedAway] = useState<boolean>(false);
   const [circleSize, setCircleSize] = useState<'compact' | 'standard'>('compact');
 
-  const handleRotateLeft = () => {
-    setMapRotation((prev) => (prev - 45 + 360) % 360);
+  const touchStartAngleRef = useRef<number | null>(null);
+  const touchStartRotationRef = useRef<number>(0);
+
+  // Two-Finger Touch Gesture Rotation directly on the map screen
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      touchStartAngleRef.current = Math.atan2(dy, dx) * (180 / Math.PI);
+      touchStartRotationRef.current = mapRotation;
+      setIsRotatingWithFinger(true);
+    }
   };
 
-  const handleRotateRight = () => {
-    setMapRotation((prev) => (prev + 45) % 360);
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && touchStartAngleRef.current !== null) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      const currentAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+      const angleDiff = currentAngle - touchStartAngleRef.current;
+      const newRotation = Math.round((touchStartRotationRef.current + angleDiff + 360) % 360);
+      setMapRotation(newRotation);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      touchStartAngleRef.current = null;
+      setIsRotatingWithFinger(false);
+    }
   };
 
   const handleResetRotation = () => {
@@ -996,10 +1023,16 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
   const proximity = getProximityStatus(activeFriend?.distanceMeters);
 
   return (
-    <div id="live-map-wrapper" className="relative w-full h-full bg-[#0b141a] overflow-hidden">
+    <div
+      id="live-map-wrapper"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="relative w-full h-full bg-[#0b141a] overflow-hidden select-none touch-none"
+    >
       {/* Rotatable Full-Screen Map Canvas Wrapper */}
       <div
-        className="absolute w-[140%] h-[140%] -left-[20%] -top-[20%] z-0 pointer-events-auto transition-transform duration-300 ease-out"
+        className="absolute w-[140%] h-[140%] -left-[20%] -top-[20%] z-0 pointer-events-auto transition-transform duration-150 ease-out"
         style={{
           transform: `rotate(${mapRotation}deg)`,
           transformOrigin: 'center center',
@@ -1010,6 +1043,44 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
 
       {/* Map Interactive Canvas Floating Overlay Container (z-30 to stay above Leaflet tiles) */}
       <div className="absolute inset-0 z-30 pointer-events-none">
+        {/* Floating Rotation Indicator during two-finger rotation */}
+        {isRotatingWithFinger && (
+          <div className="pointer-events-none absolute top-14 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-black/90 border border-sky-400 text-sky-300 text-xs font-mono font-bold shadow-2xl flex items-center gap-2 animate-pulse">
+            <Compass className="w-3.5 h-3.5 text-sky-400" />
+            <span>Rotating: {mapRotation}°</span>
+          </div>
+        )}
+
+        {/* Location Turned OFF Warning Banner */}
+        {!currentUser.appLocationStatus && (
+          <div className="pointer-events-auto absolute top-14 sm:top-18 left-2 right-2 sm:left-4 sm:right-auto sm:max-w-sm z-35 animate-in fade-in slide-in-from-top-3 duration-200">
+            <div className="p-3.5 rounded-2xl bg-black border-2 border-amber-400 shadow-2xl backdrop-blur-xl text-white space-y-2.5">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/40 shrink-0">
+                  <EyeOff className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wide">Location is Turned OFF</h4>
+                  <p className="text-[11px] text-zinc-300 mt-0.5 leading-snug">
+                    Turn on your location to interact with NaviLink, navigate along roads, and share live proximity with contacts.
+                  </p>
+                </div>
+              </div>
+              {onToggleMasterLocation && (
+                <button
+                  id="btn-map-turn-on-location"
+                  type="button"
+                  onClick={onToggleMasterLocation}
+                  className="w-full py-2 px-3 rounded-xl bg-black hover:bg-white text-white hover:text-black border border-amber-400 text-xs font-bold transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Turn ON Location Now</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Active Selected Contact Navigation & Route Card or Offline Status Alert */}
         {activeFriend && (
           <div className="absolute top-14 sm:top-4 left-2 sm:left-4 right-14 sm:right-auto sm:w-96 z-30 pointer-events-auto animate-in fade-in slide-in-from-top-3 duration-200">
@@ -1186,44 +1257,25 @@ export const LiveMapView: React.FC<LiveMapViewProps> = ({
           </div>
         )}
 
-        {/* Unified Control Stack on Right Side with Black/White/SkyBlue Buttons & Map Rotation */}
-        <div className="pointer-events-auto absolute top-14 sm:top-20 right-2 sm:right-3.5 z-30 flex flex-col items-end gap-2">
-          {/* 1. Compass & Rotation Controls */}
-          <div className="flex flex-col items-center bg-black border border-sky-400 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
-            {/* North Compass Reset Button */}
-            <button
-              id="btn-map-compass"
-              onClick={handleResetRotation}
-              title={`Compass (Bearing: ${mapRotation}°). Click to reset North.`}
-              className="p-2 sm:p-2.5 bg-black text-white hover:bg-zinc-900 transition-colors flex items-center justify-center relative cursor-pointer"
+        {/* Unified Control Stack on Right Side with Clean Black/White/SkyBlue Buttons */}
+        <div className="pointer-events-auto absolute top-14 sm:top-18 right-2 sm:right-3.5 z-30 flex flex-col items-end gap-2">
+          {/* 1. Compass Bearing & North Reset Knob (Tap to reset North, Bearing rotates smoothly) */}
+          <button
+            id="btn-map-compass"
+            onClick={handleResetRotation}
+            title={`Compass (Bearing: ${mapRotation}°). Rotate map using two fingers on touch screen or click to reset North.`}
+            className="p-2.5 sm:p-3 bg-black border border-sky-400 rounded-xl sm:rounded-2xl shadow-xl hover:bg-zinc-900 transition-all active:scale-95 cursor-pointer flex flex-col items-center gap-0.5 group"
+          >
+            <div
+              className="w-6 h-6 flex items-center justify-center transition-transform duration-200"
+              style={{ transform: `rotate(${-mapRotation}deg)` }}
             >
-              <div
-                className="w-5 h-5 flex items-center justify-center transition-transform duration-300"
-                style={{ transform: `rotate(${-mapRotation}deg)` }}
-              >
-                <Compass className="w-5 h-5 text-sky-400" />
-              </div>
-            </button>
-            {/* Rotate Left & Right buttons */}
-            <div className="flex items-center border-t border-zinc-800 text-[10px] font-bold">
-              <button
-                id="btn-rotate-left"
-                onClick={handleRotateLeft}
-                title="Rotate Left (-45°)"
-                className="px-2 py-1 bg-black text-white hover:bg-zinc-800 transition-colors border-r border-zinc-800 cursor-pointer"
-              >
-                ↺
-              </button>
-              <button
-                id="btn-rotate-right"
-                onClick={handleRotateRight}
-                title="Rotate Right (+45°)"
-                className="px-2 py-1 bg-black text-white hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
-                ↻
-              </button>
+              <Compass className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform" />
             </div>
-          </div>
+            <span className="text-[9px] font-mono text-zinc-400 group-hover:text-white">
+              {mapRotation}°
+            </span>
+          </button>
 
           {/* 2. Satellite View Toggle Button */}
           <button

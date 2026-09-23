@@ -40,8 +40,6 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({
   const [locationMode, setLocationMode] = useState<'same_room' | 'nearby' | 'remote'>('same_room');
   const [error, setError] = useState('');
 
-  if (!isOpen) return null;
-
   // Filter out self from search and ensure strict uniqueness by userId
   const currentUid = currentUser?.userId;
   const otherUsers = useMemo(() => {
@@ -53,6 +51,8 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({
     }
     return Array.from(userMap.values());
   }, [allUsers, currentUid]);
+
+  if (!isOpen) return null;
 
   const queryClean = searchQuery.trim().toLowerCase();
   const searchResults = otherUsers.filter((user) => {
